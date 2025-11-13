@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Anonymous Faculty Feedback</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial;padding:1.2rem;max-width:720px;margin:auto}
+    label{display:block;margin-top:0.8rem}
+    input,select,textarea{width:100%;padding:0.5rem;margin-top:0.25rem}
+    button{margin-top:0.8rem;padding:0.6rem 1rem}
+    .note{font-size:0.9rem;color:#666}
+    #result{margin-top:1rem}
+  </style>
+</head>
+<body>
+  <h1>Anonymous Faculty Feedback</h1>
+  <p class="note">Your feedback is anonymous. Do NOT include names or personal details.</p>
+
+  <form id="feedbackForm">
+    <label>Faculty Name / Course Code
+      <input name="facultyId" required placeholder="e.g., Dr. Kumar / CSE101" />
+    </label>
+
+    <label>Rating (1-5)
+      <select name="rating" required>
+        <option value="">Select</option>
+        <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+      </select>
+    </label>
+
+    <label>Category
+      <select name="category">
+        <option>Teaching</option>
+        <option>Course Content</option>
+        <option>Assessment</option>
+        <option>Other</option>
+      </select>
+    </label>
+
+    <label>Comments
+      <textarea name="comments" placeholder="Enter constructive feedback only"></textarea>
+    </label>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <div id="result" role="status"></div>
+
+  <script>
+    document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const body = {
+        facultyId: (f.get('facultyId') || '').trim(),
+        rating: parseInt(f.get('rating')),
+        category: (f.get('category') || '').trim(),
+        comments: (f.get('comments') || '').trim()
+      };
+
+      if(!body.facultyId || isNaN(body.rating)) {
+        document.getElementById('result').textContent = 'Please fill required fields.';
+        return;
+      }
+
+      try {
+        const resp = await fetch('/api/SubmitFeedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const json = await resp.json();
+        if(resp.ok) {
+          document.getElementById('result').textContent = 'Thanks — feedback submitted!';
+          e.target.reset();
+        } else {
+          document.getElementById('result').textContent = json?.error || 'Submission failed';
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById('result').textContent = 'Submission error';
+      }
+    });
+  </script>
+</body>
+</html>
