@@ -11,6 +11,8 @@
     button{margin-top:0.8rem;padding:0.6rem 1rem}
     .note{font-size:0.9rem;color:#666}
     #result{margin-top:1rem}
+    .error{color:crimson}
+    .success{color:green}
   </style>
 </head>
 <body>
@@ -48,8 +50,13 @@
   <div id="result" role="status"></div>
 
   <script>
+    const resultEl = document.getElementById('result');
+
     document.getElementById('feedbackForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      resultEl.textContent = '';
+      resultEl.className = '';
+
       const f = new FormData(e.target);
       const body = {
         facultyId: (f.get('facultyId') || '').trim(),
@@ -58,8 +65,9 @@
         comments: (f.get('comments') || '').trim()
       };
 
-      if(!body.facultyId || isNaN(body.rating)) {
-        document.getElementById('result').textContent = 'Please fill required fields.';
+      if (!body.facultyId || isNaN(body.rating)) {
+        resultEl.textContent = 'Please fill required fields.';
+        resultEl.className = 'error';
         return;
       }
 
@@ -69,16 +77,34 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body)
         });
-        const json = await resp.json();
-        if(resp.ok) {
-          document.getElementById('result').textContent = 'Thanks — feedback submitted!';
+
+        // Read text first — safe if body empty or non-JSON
+        const text = await resp.text();
+        let data = null;
+        if (text) {
+          try {
+            data = JSON.parse(text);
+          } catch (parseErr) {
+            console.warn('Response not JSON:', text);
+          }
+        }
+
+        if (resp.ok) {
+          // prefer any returned message, fall back to default
+          const msg = (data && (data.message || data.ok)) ? (data.message || 'Thanks — feedback submitted!') : 'Thanks — feedback submitted!';
+          resultEl.textContent = msg;
+          resultEl.className = 'success';
           e.target.reset();
         } else {
-          document.getElementById('result').textContent = json?.error || 'Submission failed';
+          const errMsg = (data && (data.error || data.message)) ? (data.error || data.message) : `Submission failed (HTTP ${resp.status})`;
+          resultEl.textContent = errMsg;
+          resultEl.className = 'error';
+          console.error('SubmitFeedback failed', resp.status, text);
         }
       } catch (err) {
-        console.error(err);
-        document.getElementById('result').textContent = 'Submission error';
+        console.error('Network or fetch error', err);
+        resultEl.textContent = 'Submission error (network). Check console.';
+        resultEl.className = 'error';
       }
     });
   </script>
