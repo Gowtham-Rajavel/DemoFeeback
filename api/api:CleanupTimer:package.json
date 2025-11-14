@@ -1,7 +1,10 @@
 {
-  "name": "CleanupTimer",
-  "version": "1.0.0",
-  "dependencies": {
-    "mssql": "^9.1.1"
-  }
+  "bindings": [
+    {
+      "name": "myTimer",
+      "type": "timerTrigger",
+      "direction": "in",
+      "schedule": "0 0 2 * * *"
+    }
+  ]
 }
