@@ -3,13 +3,11 @@ const sql = require('mssql');
 /**
  * SubmitFeedback Azure Function
  * - Expects JSON body: { facultyId, rating, category?, comments? }
- * - Uses environment var: SQL_CONNECTION_STRING
+ * - Uses env var: SQL_CONNECTION_STRING
  * - Optional env var: DEBUG=true  (when set, error responses include brief messages)
  */
 module.exports = async function (context, req) {
   context.log.info('SubmitFeedback invoked');
-
-  const DEBUG = (process.env.DEBUG === 'true');
 
   try {
     const body = req.body || {};
@@ -81,7 +79,6 @@ module.exports = async function (context, req) {
 
     const respBody = { error: 'Server error' };
     if (process.env.DEBUG === 'true') {
-      // Include limited error info only when DEBUG true (do NOT enable in production)
       respBody.detail = (err && err.message) ? err.message : 'unknown error';
     }
 
